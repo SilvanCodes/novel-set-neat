@@ -27,8 +27,8 @@ impl Connection {
     pub fn output(&self) -> Id {
         self.2
     }
-    pub fn weight(&mut self) -> &mut Weight {
-        &mut self.1
+    pub fn adjust_weight(&mut self, adjustment: f64) {
+        *self.1 += adjustment;
     }
 }
 impl Gene for Connection {}

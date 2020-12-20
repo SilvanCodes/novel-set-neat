@@ -11,7 +11,7 @@ pub struct Statistics {
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
-pub struct FitnessReport {
+pub struct FitnessStatisitcs {
     pub raw_maximum: f64,
     pub raw_minimum: f64,
     pub raw_average: f64,
@@ -25,7 +25,7 @@ pub struct FitnessReport {
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
-pub struct NoveltyReport {
+pub struct NoveltyStatisitcs {
     pub raw_maximum: f64,
     pub raw_minimum: f64,
     pub raw_average: f64,
@@ -42,6 +42,6 @@ pub struct PopulationStatistics {
     pub top_performer: Individual,
     pub age_maximum: usize,
     pub age_average: f64,
-    pub fitness: FitnessReport,
-    pub novelty: NoveltyReport,
+    pub fitness: FitnessStatisitcs,
+    pub novelty: NoveltyStatisitcs,
 }

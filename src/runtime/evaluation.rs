@@ -1,4 +1,4 @@
-use crate::{individual::Individual, statistics::Statistics};
+use crate::{individual::Individual, utility::statistics::Statistics};
 
 pub enum Evaluation {
     Progress(Statistics),

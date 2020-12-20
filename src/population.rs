@@ -10,9 +10,8 @@ use crate::{
         Individual,
     },
     parameters::Parameters,
-    rng::NeatRng,
     runtime::progress::Progress,
-    statistics::PopulationStatistics,
+    utility::{rng::NeatRng, statistics::PopulationStatistics},
 };
 
 pub struct Population {
@@ -33,8 +32,8 @@ impl Population {
 
         // create randomn source
         let mut rng = NeatRng::new(
-            parameters.seed,
-            parameters.mutation.weights.perturbation_std_dev,
+            parameters.setup.seed,
+            parameters.mutation.weight_perturbation_std_dev,
         );
 
         let mut individuals = Vec::new();
@@ -65,9 +64,53 @@ impl Population {
 
         let partners = self.individuals.as_slice();
 
+        let mut scores: Vec<f64> = self
+            .individuals
+            .iter()
+            .map(|individual| individual.score())
+            .collect();
+
+        let mut minimum_score = f64::INFINITY;
+        let mut maximum_score = f64::NEG_INFINITY;
+
+        // analyse score values
+        for &score in &scores {
+            if score > maximum_score {
+                maximum_score = score;
+            }
+            if score < minimum_score {
+                minimum_score = score;
+            }
+        }
+
+        // shift and normalize scores
+        for score in &mut scores {
+            *score -= minimum_score;
+            *score /= maximum_score;
+        }
+
+        let total_score: f64 = scores.iter().sum();
+
+        let offspring_count = parameters.setup.population_size - self.individuals.len();
+
+        let score_offspring_value = offspring_count as f64 / total_score;
+
         let mut offsprings = Vec::new();
 
-        // generate as many offspring as population size allows
+        for (parent_index, score) in scores.iter().enumerate() {
+            for _ in 0..(score * score_offspring_value).round() as usize {
+                let mut offspring = self.individuals[parent_index].crossover(
+                    partners
+                        .choose(&mut self.rng.small)
+                        .expect("could not select random partner"),
+                    &mut self.rng.small,
+                );
+                offspring.mutate(&mut self.rng, &mut self.id_gen, parameters);
+                offsprings.push(offspring);
+            }
+        }
+
+        /* // generate as many offspring as population size allows
         for parent in self
             .individuals
             .iter()
@@ -82,7 +125,7 @@ impl Population {
             );
             offspring.mutate(&mut self.rng, &mut self.id_gen, parameters);
             offsprings.push(offspring);
-        }
+        } */
 
         self.individuals.extend(offsprings.into_iter());
 
@@ -106,19 +149,18 @@ impl Population {
 
         let behavior_count = behaviors.len() as f64;
 
-        let raw_novelties = behaviors.compute_novelty(parameters.novelty.nearest_neighbors);
+        let raw_novelties = behaviors.compute_novelty(parameters.setup.novelty_nearest_neighbors);
 
         let most_novel = raw_novelties
             .iter()
             .enumerate()
+            .take(self.individuals.len())
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).expect("could not compare floats"))
             .map(|(index, _)| index)
             .expect("failed finding most novel");
 
-        // add most novel individual to archive if it resides in population
-        if most_novel < self.individuals.len() - 1 {
-            self.archive.push(self.individuals[most_novel].clone());
-        }
+        // add most novel individual to archive
+        self.archive.push(self.individuals[most_novel].clone());
 
         let mut raw_minimum = f64::INFINITY;
         let mut raw_sum = 0.0;
@@ -261,9 +303,17 @@ impl Population {
                 )
                 .unwrap_or_else(|| {
                     panic!(
-                        "failed to compare score {} and score {}",
-                        individual_0.score(),
-                        &individual_1.score()
+                        "failed to compare fitness {} and fitness {}",
+                        individual_0
+                            .fitness
+                            .as_ref()
+                            .map(|f| f.normalized.value())
+                            .unwrap_or(f64::NEG_INFINITY),
+                        individual_1
+                            .fitness
+                            .as_ref()
+                            .map(|f| f.normalized.value())
+                            .unwrap_or(f64::NEG_INFINITY)
                     )
                 })
         });
@@ -274,15 +324,7 @@ impl Population {
             .clone()
     }
 
-    pub fn next_generation(
-        &mut self,
-        parameters: &Parameters,
-        progress: &[Progress],
-    ) -> PopulationStatistics {
-        self.assign_fitness(progress);
-        self.assign_behavior(progress);
-        self.calculate_novelty(parameters);
-
+    fn sort_individuals_by_score(&mut self) {
         // sort individuals by their score (descending, i.e. highest score first)
         self.individuals.sort_by(|individual_0, individual_1| {
             individual_1
@@ -296,13 +338,23 @@ impl Population {
                     )
                 })
         });
+    }
 
-        // add best scoring individual to archive ?? (should be most novel ?)
-        // self.archive.push(self.individuals[0].clone());
+    pub fn next_generation(
+        &mut self,
+        parameters: &Parameters,
+        progress: &[Progress],
+    ) -> PopulationStatistics {
+        self.assign_fitness(progress);
+        self.assign_behavior(progress);
+        // calculate novelty based on previously assigned behavior
+        self.calculate_novelty(parameters);
+
+        self.sort_individuals_by_score();
 
         // remove any individual that does not survive
         self.individuals.truncate(
-            (parameters.setup.population_size as f64 * parameters.reproduction.surviving).ceil()
+            (parameters.setup.population_size as f64 * parameters.setup.survival_rate).ceil()
                 as usize,
         );
 

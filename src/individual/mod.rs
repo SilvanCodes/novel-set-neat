@@ -59,7 +59,13 @@ impl Individual {
             .map(|n| n.normalized.value())
             .unwrap_or(0.0);
 
-        if novelty == 0.0 && fitness == 0.0 {
+        novelty.max(fitness)
+
+        // (novelty + fitness) / 2.0
+
+        // novelty * 0.7 + fitness * 0.3
+
+        /* if novelty == 0.0 && fitness == 0.0 {
             return 0.0;
         }
 
@@ -67,13 +73,13 @@ impl Individual {
             (novelty, fitness)
         } else {
             (fitness, novelty)
-        };
+        }; */
 
         // ratio tells us what score is dominant in this genome
-        let ratio = min / max / 2.0;
+        // let ratio = min / max / 2.0;
 
         // we weight the scores by their ratio, i.e. a genome that has a good fitness value is primarily weighted by that
-        min * ratio + max * (1.0 - ratio)
+        // min * ratio + max * (1.0 - ratio)
     }
 
     // self is fitter if it has higher score or in case of equal score has fewer genes, i.e. less complexity

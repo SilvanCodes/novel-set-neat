@@ -4,36 +4,32 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Default, Debug)]
 pub struct Parameters {
-    #[serde(default)]
-    pub seed: u64,
     pub setup: Setup,
-    pub initialization: Initialization,
-    pub reproduction: Reproduction,
+    pub activations: Activations,
     pub mutation: Mutation,
-    // pub compatability: Compatability,
-    pub novelty: Novelty,
 }
 
 #[derive(Deserialize, Serialize, Default, Debug)]
 pub struct Setup {
+    pub seed: u64,
+    pub survival_rate: f64,
     pub population_size: usize,
-    pub dimension: Dimension,
+    pub input_dimension: usize,
+    pub output_dimension: usize,
+    pub novelty_nearest_neighbors: usize,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-pub struct Initialization {
-    pub output: Activation,
-    pub activations: Vec<Activation>,
-    pub connections: f64,
-    // #[serde(default)]
-    // pub weights: WeightInitialization,
+pub struct Activations {
+    pub output_nodes: Activation,
+    pub hidden_nodes: Vec<Activation>,
 }
 
-impl Default for Initialization {
+impl Default for Activations {
     fn default() -> Self {
         Self {
-            output: Activation::Tanh,
-            activations: vec![
+            output_nodes: Activation::Tanh,
+            hidden_nodes: vec![
                 Activation::Linear,
                 Activation::Sigmoid,
                 Activation::Tanh,
@@ -45,77 +41,29 @@ impl Default for Initialization {
                 Activation::Absolute,
                 Activation::Relu,
             ],
-            connections: 1.0,
-            // weights: WeightInitialization::Random,
         }
     }
-}
-
-#[derive(Deserialize, Serialize, Default, Debug)]
-pub struct Reproduction {
-    pub surviving: f64,
-    // pub stale_after: usize,
-    // pub elitism_species: usize,
-    // pub elitism_individuals: usize,
-}
-
-#[derive(Deserialize, Serialize, Default, Debug)]
-pub struct Dimension {
-    pub input: usize,
-    pub output: usize,
-}
-
-#[derive(Deserialize, Serialize, Default, Debug)]
-pub struct Mutation {
-    pub gene_node: f64,
-    pub gene_connection: f64,
-    pub recurrent: f64,
-    pub activation_change: f64,
-    pub weights: WeightsMutation,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-pub struct WeightsMutation {
-    // minimum percent of weights mutated per individual
-    // pub percent_min: f64,
-    // maximum percent of weights mutated per individual
-    // pub percent_max: f64,
-    // chance to mutate to a new random sample of the distribution
-    // pub random: f64,
-    // range of weight perutrbation, i.e. hard upper/lower cap for uniform distribution, stdandard deviation for normal distribution
-    pub perturbation_std_dev: f64,
-    // type of distribution to sample from, normal or uniform
-    // pub distribution: WeightDistribution,
+pub struct Mutation {
+    pub new_node_chance: f64,
+    pub new_connection_chance: f64,
+    pub connection_is_recurrent_chance: f64,
+    pub change_activation_function_chance: f64,
+    pub weight_perturbation_std_dev: f64,
 }
 
-impl Default for WeightsMutation {
+impl Default for Mutation {
     fn default() -> Self {
         Self {
-            // percent_min: 0.0,
-            // percent_max: 1.0,
-            // random: 0.0,
-            perturbation_std_dev: 1.0,
-            // distribution: WeightDistribution::Uniform,
+            new_node_chance: 0.05,
+            new_connection_chance: 0.1,
+            connection_is_recurrent_chance: 0.3,
+            change_activation_function_chance: 0.05,
+            weight_perturbation_std_dev: 1.0,
         }
     }
-}
-
-/* #[derive(Deserialize, Serialize, Default, Debug)]
-pub struct Compatability {
-    pub target_species: usize,
-    pub threshold: f64,
-    pub threshold_delta: f64,
-    pub factor_weights: f64,
-    pub factor_genes: f64,
-    pub factor_activations: f64,
-} */
-
-#[derive(Deserialize, Serialize, Default, Debug)]
-pub struct Novelty {
-    // pub cap: f64,
-    pub nearest_neighbors: usize,
-    // pub impatience: usize,
-    // pub demanded_increase_percent: f64,
 }
 
 impl Parameters {

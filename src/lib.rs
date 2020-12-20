@@ -2,15 +2,12 @@ pub use individual::Individual;
 use parameters::Parameters;
 pub use runtime::{evaluation::Evaluation, progress::Progress, Runtime};
 
-mod favannat_impl;
 mod genes;
 mod individual;
 mod parameters;
 mod population;
-mod rng;
 mod runtime;
-mod statistics;
-mod utility;
+pub mod utility;
 
 pub struct Neat {
     pub parameters: Parameters,

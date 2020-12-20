@@ -1,8 +1,10 @@
-use std::time::Instant;
+use std::time::{Instant, SystemTime};
 
-use crate::{individual::Individual, population::Population, statistics::Statistics, Neat};
+use crate::{
+    individual::Individual, population::Population, utility::statistics::Statistics, Neat,
+};
 
-use rayon::prelude::*;
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 use self::{evaluation::Evaluation, progress::Progress};
 
@@ -48,6 +50,10 @@ impl<'a> Iterator for Runtime<'a> {
     type Item = Evaluation;
 
     fn next(&mut self) -> Option<Self::Item> {
+        self.statistics.time_stamp = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
         let now = Instant::now();
 
         // generate progress by running progress function for every individual
